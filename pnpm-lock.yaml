@@ -14,6 +14,9 @@ importers:
       '@mysten/sui':
         specifier: 1.28.0
         version: 1.28.0(typescript@5.8.3)
+      '@mysten/walrus':
+        specifier: ^0.0.17
+        version: 0.0.17(typescript@5.8.3)
       '@radix-ui/colors':
         specifier: ^3.0.0
         version: 3.0.0
@@ -356,6 +359,12 @@ packages:
 
   '@mysten/wallet-standard@0.14.5':
     resolution: {integrity: sha512-UtwDvhCx6qZneoStQu9hiFqX8+XEimbnAcWUBSN2T9hRDf+o0Btyr30XZ3zuqIyTQIwvFHUQ0RrRQhAhLpSDww==}
+
+  '@mysten/walrus-wasm@0.0.6':
+    resolution: {integrity: sha512-rqXopgWqALp8jdVaHeW64P5I7MmzEGy8gCFbfzK8xGgWGpSjKtvVeHJ9EguRVOxALaYtDBVlmMPnoySJi+bLjA==}
+
+  '@mysten/walrus@0.0.17':
+    resolution: {integrity: sha512-3JZ4+8yxBLjnmnNAQC+gkH4rE7C40aJg8/p1c2rXXSsUV5yGZciqJE3gTxqVsz1ZOLRpshfNSbwkSzdDthw0rw==}
 
   '@mysten/window-wallet-core@0.0.2':
     resolution: {integrity: sha512-u57gHFlLYPDTK5bDeabRjkIdyLaiFVwL3bVbnBtu5WJpfFOv/KMOpIQt4820ICBG843jN35tzlulQ0nlbWCYeA==}
@@ -1467,6 +1476,9 @@ packages:
   csstype@3.1.3:
     resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
 
+  dataloader@2.2.3:
+    resolution: {integrity: sha512-y2krtASINtPFS1rSDjacrFgn1dcUuoREVabwlOGOe4SdxenREqwjwjElAdwvbGM7kgZz9a3KVicWR7vcz8rnzA==}
+
   debug@4.4.0:
     resolution: {integrity: sha512-6WTZ/IxCY/T6BALoZHaE4ctp9xm+Z5kY/pzYaCHRFeyVhojxlrm+46y68HA6hr0TcwEssoxNiDEUJQjfPZ/RYA==}
     engines: {node: '>=6.0'}
@@ -2269,6 +2281,20 @@ snapshots:
     dependencies:
       '@mysten/sui': 1.28.0(typescript@5.8.3)
       '@wallet-standard/core': 1.1.0
+    transitivePeerDependencies:
+      - '@gql.tada/svelte-support'
+      - '@gql.tada/vue-support'
+      - typescript
+
+  '@mysten/walrus-wasm@0.0.6': {}
+
+  '@mysten/walrus@0.0.17(typescript@5.8.3)':
+    dependencies:
+      '@mysten/bcs': 1.6.0
+      '@mysten/sui': 1.28.0(typescript@5.8.3)
+      '@mysten/utils': 0.0.0
+      '@mysten/walrus-wasm': 0.0.6
+      dataloader: 2.2.3
     transitivePeerDependencies:
       - '@gql.tada/svelte-support'
       - '@gql.tada/vue-support'
@@ -3418,6 +3444,8 @@ snapshots:
   cssesc@3.0.0: {}
 
   csstype@3.1.3: {}
+
+  dataloader@2.2.3: {}
 
   debug@4.4.0:
     dependencies:
