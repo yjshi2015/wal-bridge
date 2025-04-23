@@ -2,6 +2,7 @@ import { ConnectButton } from "@mysten/dapp-kit";
 import { Box, Container, Flex, Heading, Button, Text } from "@radix-ui/themes";
 import { WalletStatus } from "./WalletStatus";
 import { FileUpload } from "./WalrusIndex";
+import { SwapComponent } from './SwapComponent';
 
 function App() {
   return (
@@ -38,6 +39,10 @@ function App() {
           <Box>
             <Text size="5" weight="bold" mb="2">文件存储</Text>
             <FileUpload />
+          </Box>
+          <Box>
+            <Text size="5" weight="bold" mb="2">wSOL 兑换 SUI</Text>
+            <SwapComponent />
           </Box>
         </Container>
       </Container>
