@@ -32,17 +32,34 @@ export function FileUpload() {
 
 			console.log('当前钱包地址:', currentAccount.address);
 			setUploadStatus('正在准备文件...');
-			const file = new TextEncoder().encode('Hello from the TS SDK!!! SYJ \n');
+
+			// 创建一个文件输入元素
+			const input = document.createElement('input');
+			input.type = 'file';
+			input.accept = '*/*'; // 接受所有文件类型
+
+			// 等待用户选择文件
+			const file = await new Promise<File>((resolve) => {
+				input.onchange = (e) => {
+					const file = (e.target as HTMLInputElement).files?.[0];
+					if (file) resolve(file);
+				};
+				input.click();
+			});
+
+			// 读取文件内容
+			const arrayBuffer = await file.arrayBuffer();
+			const fileBytes = new Uint8Array(arrayBuffer);
 
 			setUploadStatus('正在编码文件...');
-			const encoded = await walrusClient.encodeBlob(file);
+			const encoded = await walrusClient.encodeBlob(fileBytes);
 			console.log('文件编码完成:', encoded);
 
 			setUploadStatus('正在注册文件...');
 			const registerBlobTransaction = await walrusClient.registerBlobTransaction({
 				blobId: encoded.blobId,
 				rootHash: encoded.rootHash,
-				size: file.length,
+				size: fileBytes.length,
 				deletable: true,
 				epochs: 3,
 				owner: currentAccount.address,
@@ -124,6 +141,43 @@ export function FileUpload() {
 		}
 	}
 
+	async function retrieveBlob(blobId: string) {
+		try {
+			// 从 Walrus 客户端读取 blob 数据
+			const blobBytes = await walrusClient.readBlob({ blobId });
+			
+			// 将 blob 数据保存为文件
+			const blob = new Blob([new Uint8Array(blobBytes)]);
+			
+			const attributes = await walrusClient.readBlobAttributes({
+				blobObjectId: blobId,
+			});
+		
+			console.log(attributes);
+
+			// 创建下载链接
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			
+			// 设置文件名（可以根据需要修改）
+			a.download = `blob-${blobId}.bin`;
+			
+			// 触发下载
+			document.body.appendChild(a);
+			a.click();
+			
+			// 清理
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+			
+		} catch (error) {
+			console.error('读取 blob 失败:', error);
+			throw error;
+		}
+	}
+
+
 	return (
 		<Card>
 			<Box p="4">
@@ -139,9 +193,17 @@ export function FileUpload() {
 					</Text>
 				)}
 				{blobId && (
-					<Text as="div" size="2" mt="2">
-						文件 ID: {blobId}
-					</Text>
+					<Box mt="4">
+						<Text as="div" size="2" mb="2">
+							文件 ID: {blobId}
+						</Text>
+						<Button 
+							onClick={() => retrieveBlob(blobId)}
+							variant="outline"
+						>
+							下载文件
+						</Button>
+					</Box>
 				)}
 			</Box>
 		</Card>
