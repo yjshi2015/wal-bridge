@@ -13,6 +13,7 @@ export function FileUpload() {
 	const currentAccount = useCurrentAccount();
 	const [uploadStatus, setUploadStatus] = useState<string>('');
 	const [blobId, setBlobId] = useState<string>('');
+	const [blobObjectId, setBlobObjectId] = useState<string>('');
 
 	const walrusClient = new WalrusClient({
 		network: 'testnet',
@@ -133,6 +134,7 @@ export function FileUpload() {
 				throw new Error('Failed to certify blob');
 			}
 
+			setBlobObjectId(blobObject.objectId);
 			setBlobId(encoded.blobId);
 			setUploadStatus('文件上传成功！');
 		} catch (error: any) {
@@ -149,11 +151,12 @@ export function FileUpload() {
 			// 将 blob 数据保存为文件
 			const blob = new Blob([new Uint8Array(blobBytes)]);
 			
-			const attributes = await walrusClient.readBlobAttributes({
-				blobObjectId: blobId,
-			});
+			// todo syj 提示一个奇怪的Sui ObjectId 找不到的错误
+			// const attributes = await walrusClient.readBlobAttributes({
+			// 	blobObjectId: blobObjectId,
+			// });
 		
-			console.log(attributes);
+			// console.log(attributes);
 
 			// 创建下载链接
 			const url = URL.createObjectURL(blob);
@@ -196,6 +199,9 @@ export function FileUpload() {
 					<Box mt="4">
 						<Text as="div" size="2" mb="2">
 							文件 ID: {blobId}
+						</Text>
+						<Text as="div" size="2" mb="2">
+							对象 ID: {blobObjectId}
 						</Text>
 						<Button 
 							onClick={() => retrieveBlob(blobId)}
