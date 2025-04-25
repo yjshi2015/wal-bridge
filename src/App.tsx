@@ -2,7 +2,7 @@ import { ConnectButton } from "@mysten/dapp-kit";
 import { Box, Container, Flex, Heading, Button, Text } from "@radix-ui/themes";
 import { WalletStatus } from "./WalletStatus";
 import { FileUpload } from "./WalrusIndex";
-import { SwapComponent } from './SwapComponent';
+import { SwapComponent } from './CetusIndex';
 
 function App() {
   return (

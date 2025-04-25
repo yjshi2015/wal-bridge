@@ -16,7 +16,7 @@ export function FileUpload() {
 	const [blobObjectId, setBlobObjectId] = useState<string>('');
 
 	const walrusClient = new WalrusClient({
-		network: 'testnet',
+		network: 'mainnet',
 		suiClient,
 		storageNodeClientOptions: {
 			timeout: 60_000,

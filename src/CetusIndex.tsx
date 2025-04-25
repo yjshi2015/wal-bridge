@@ -4,10 +4,12 @@
 import { useSignAndExecuteTransaction, useSuiClient, useCurrentAccount } from '@mysten/dapp-kit';
 import { Box, Button, Text, Card } from "@radix-ui/themes";
 import { useState } from 'react';
-import { AggregatorClient, Env } from "@cetusprotocol/aggregator-sdk";
-import { Transaction } from '@mysten/sui/transactions';
+import { AggregatorClient, CETUS, Env } from "@cetusprotocol/aggregator-sdk";
+import { Transaction, TransactionObjectArgument } from '@mysten/sui/transactions';
 import BN from 'bn.js';
 const aggregatorURL = "https://api-sui.cetus.zone/router_v2/find_routes";
+// const aggregatorURL = "https://api-sui.devcetus.com/router_v2";
+
 
 export function SwapComponent() {
 	const suiClient = useSuiClient();
@@ -20,7 +22,7 @@ export function SwapComponent() {
 		endpoint:aggregatorURL,
 		signer: currentAccount?.address,
 		client: suiClient,
-		env: Env.Testnet,
+		env: Env.Mainnet,
 	});
 
 	async function swapWSOLToSUI() {
@@ -33,17 +35,18 @@ export function SwapComponent() {
 			setSwapStatus('正在准备交易...');
 
 			// 定义代币类型
-			const wSOL = "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93b::coin::COIN"; // wSOL 代币类型
-			const SUI = "0x2::sui::SUI"; // SUI 代币类型
+			// const USDC = "0x26b3bc67befc214058ca78ea9a2690298d731a2d4309485ec3d40198063c4abc::usdc::USDC";
+			const fromToken = "0x5145494a5f5100e645e4b0aa950fa6b68f614e8c59e17bc5ded3495123a79178::ns::NS"
+			const targetToken = "0x2::sui::SUI"; // SUI 代币类型
 
-			// 设置兑换数量（这里以 1 wSOL 为例）
-			const amount = new BN(1000000000); // 1 wSOL = 1000000000 最小单位
+			// 设置兑换数量（这里以 0.1 SUI 为例）
+			const amountStr = 1;
 
 			// 查找最佳兑换路径
 			const routers = await client.findRouters({
-				from: wSOL,
-				target: SUI,
-				amount,
+				from: fromToken,
+				target: targetToken,
+				amount: new BN(amountStr),
 				byAmountIn: true, // 固定输入数量
 			});
 
@@ -54,12 +57,39 @@ export function SwapComponent() {
 			}
 
 			// 创建交易构建器
+			let coin: TransactionObjectArgument;
 			const txb = new Transaction();
+
+			if (fromToken.toUpperCase() === "SUI") {
+				coin = txb.splitCoins(txb.gas, [amountStr]);
+			} else {
+				const allCoins = await suiClient.getCoins({
+					owner: currentAccount.address,
+					coinType: fromToken,
+					limit: 30,
+				});
+	
+				if (allCoins.data.length === 0) {
+					console.error("No coins found");
+					throw new Error('No coins found');
+				}
+	
+				const mergeCoins = [];
+	
+				for (let i = 1; i < allCoins.data.length; i++) {
+					console.info("Coin:", allCoins.data[i]);
+					mergeCoins.push(allCoins.data[i].coinObjectId);
+				}
+				console.info("Merge coins:", mergeCoins);
+	
+				txb.mergeCoins(allCoins.data[0].coinObjectId, mergeCoins);
+				coin = txb.splitCoins(allCoins.data[0].coinObjectId, [amountStr]);
+			}
 
 			// 构建兑换交易
 			const targetCoin = await client.routerSwap({
 				routers,
-				inputCoin: txb.object(currentAccount.address), // 使用钱包中的 wSOL
+				inputCoin: coin,
 				slippage: 0.01, // 1% 滑点
 				txb,
 			});
