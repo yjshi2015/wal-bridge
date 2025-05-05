@@ -1,114 +1,126 @@
+import { Button, Card, Box, Text } from "@radix-ui/themes";
+import { useState } from 'react';
 import {
-  Wormhole,
-  canonicalAddress,
-  routes,
-  wormhole,
-} from '@wormhole-foundation/sdk';
-
-import evm from '@wormhole-foundation/sdk/evm';
-import solana from '@wormhole-foundation/sdk/solana';
-import { getSigner } from './helpers/index.js';
-
-(async function () {
-  // Setup
-  const wh = await wormhole('Testnet', [evm, solana]);
-
-  // Get chain contexts
-  const sendChain = wh.getChain('Avalanche');
-  const destChain = wh.getChain('Solana');
-
-  // Get signers from local config
-  const sender = await getSigner(sendChain);
-  const receiver = await getSigner(destChain);
-
-  // Create new resolver, passing the set of routes to consider
-  const resolver = wh.resolver([
-    routes.TokenBridgeRoute, // manual token bridge
-    routes.AutomaticTokenBridgeRoute, // automatic token bridge
-    routes.CCTPRoute, // manual CCTP
-    routes.AutomaticCCTPRoute, // automatic CCTP
-    routes.AutomaticPorticoRoute, // Native eth transfers
-  ]);
-
-  // What tokens are available on the source chain?
-  const srcTokens = await resolver.supportedSourceTokens(sendChain);
-  console.log(
-    'Allowed source tokens: ',
-    srcTokens.map((t) => canonicalAddress(t))
-  );
-
-  const sendToken = Wormhole.tokenId(sendChain.chain, 'native');
-
-  // Given the send token, what can we possibly get on the destination chain?
-  const destTokens = await resolver.supportedDestinationTokens(
-    sendToken,
-    sendChain,
-    destChain
-  );
-  console.log(
-    'For the given source token and routes configured, the following tokens may be receivable: ',
-    destTokens.map((t) => canonicalAddress(t))
-  );
-  // Grab the first one for the example
-  const destinationToken = destTokens[0]!;
-
-  // Creating a transfer request fetches token details
-  // Since all routes will need to know about the tokens
-  const tr = await routes.RouteTransferRequest.create(wh, {
-    source: sendToken,
-    destination: destinationToken,
-  });
-
-  // Resolve the transfer request to a set of routes that can perform it
-  const foundRoutes = await resolver.findRoutes(tr);
-  console.log(
-    'For the transfer parameters, we found these routes: ',
-    foundRoutes
-  );
-
-  const bestRoute = foundRoutes[0]!;
-  console.log('Selected: ', bestRoute);
-
-  console.log(
-    'This route offers the following default options',
-    bestRoute.getDefaultOptions()
-  );
-
-  // Specify the amount as a decimal string
-  const amt = '0.001';
-  // Create the transfer params for this request
-  const transferParams = { amount: amt, options: { nativeGas: 0 } };
-
-  // Validate the transfer params passed, this returns a new type of ValidatedTransferParams
-  // which (believe it or not) is a validated version of the input params
-  // This new var must be passed to the next step, quote
-  const validated = await bestRoute.validate(tr, transferParams);
-  if (!validated.valid) throw validated.error;
-  console.log('Validated parameters: ', validated.params);
-
-  // Get a quote for the transfer, this too returns a new type that must
-  // be passed to the next step, execute (if you like the quote)
-  const quote = await bestRoute.quote(tr, validated.params);
-  if (!quote.success) throw quote.error;
-  console.log('Best route quote: ', quote);
-
-  // If you're sure you want to do this, set this to true
-  const imSure = false;
-  if (imSure) {
-    // Now the transfer may be initiated
-    // A receipt will be returned, guess what you gotta do with that?
-    const receipt = await bestRoute.initiate(
-      tr,
-      sender.signer,
-      quote,
-      receiver.address
+    Wormhole,
+    canonicalAddress,
+    routes,
+    wormhole,
+  } from '@wormhole-foundation/sdk';
+  
+  import solana from '@wormhole-foundation/sdk/solana';
+  import sui from '@wormhole-foundation/sdk/sui';
+  import { getSigner } from './helpers';
+  
+  export function StartBridge() {
+    const [status, setStatus] = useState<string>('');
+    const [isLoading, setIsLoading] = useState(false);
+  
+    async function handleBridge() {
+      try {
+        setIsLoading(true);
+        setStatus('正在准备跨链...');
+  
+        // 设置网络和链
+        const wh = await wormhole('Testnet', [solana, sui]);
+    
+        // 获取链上下文
+        const sendChain = wh.getChain('Solana');
+        const destChain = wh.getChain('Sui');
+    
+        // 获取签名者
+        const sender = await getSigner(sendChain);
+        const receiver = await getSigner(destChain);
+    
+        // 创建路由解析器
+        const resolver = wh.resolver([
+          routes.TokenBridgeRoute, // 手动代币桥
+          routes.AutomaticTokenBridgeRoute, // 自动代币桥
+          routes.CCTPRoute, // 手动 CCTP
+          routes.AutomaticCCTPRoute, // 自动 CCTP
+          routes.AutomaticPorticoRoute, // 原生代币转账
+        ]);
+    
+        // 获取源链上可用的代币
+        // const srcTokens = await resolver.supportedSourceTokens(sendChain);
+        // console.log('允许的源代币:', srcTokens.map((t) => canonicalAddress(t)));
+    
+        // 选择原生代币
+        const sendToken = Wormhole.tokenId(sendChain.chain, 'native');
+    
+        // 获取目标链上可接收的代币
+        const destTokens = await resolver.supportedDestinationTokens(
+          sendToken,
+          sendChain,
+          destChain
+        );
+        console.log('可接收的目标代币:', destTokens.map((t) => canonicalAddress(t)));
+        
+        // 选择第一个可用的目标代币
+        const destinationToken = destTokens[0]!;
+    
+        // 创建转账请求
+        const tr = await routes.RouteTransferRequest.create(wh, {
+          source: sendToken,
+          destination: destinationToken,
+        });
+    
+        // 查找可用的路由
+        const foundRoutes = await resolver.findRoutes(tr);
+        console.log('找到的路由:', foundRoutes);
+    
+        // 选择第一个路由
+        const bestRoute = foundRoutes[0]!;
+        console.log('选择的路由:', bestRoute);
+    
+        // 获取默认选项
+        console.log('默认选项:', bestRoute.getDefaultOptions());
+    
+        // 设置转账金额
+        const amt = '0.001';
+        const transferParams = { amount: amt, options: { nativeGas: 0 } };
+    
+        // 验证参数
+        const validated = await bestRoute.validate(tr, transferParams);
+        if (!validated.valid) throw validated.error;
+        console.log('验证后的参数:', validated.params);
+    
+        // 获取报价
+        const quote = await bestRoute.quote(tr, validated.params);
+        if (!quote.success) throw quote.error;
+        console.log('最佳路由报价:', quote);
+    
+        // 执行转账
+        const receipt = await bestRoute.initiate(
+          tr,
+          sender.signer,
+          quote,
+          receiver.address
+        );
+        console.log('转账收据:', receipt);
+    
+        // 等待转账完成
+        await routes.checkAndCompleteTransfer(bestRoute, receipt, receiver.signer);
+        
+        setStatus('跨链转账成功！');
+      } catch (error: any) {
+        setStatus(`跨链失败: ${error.message}`);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  
+    return (
+      <Card>
+        <Box p="4">
+          <Button onClick={handleBridge} disabled={isLoading}>
+            {isLoading ? '处理中...' : '开始跨链'}
+          </Button>
+          {status && (
+            <Text as="div" size="2" mt="2" color={status.includes('成功') ? 'green' : 'gray'}>
+              {status}
+            </Text>
+          )}
+        </Box>
+      </Card>
     );
-    console.log('Initiated transfer with receipt: ', receipt);
-
-    // Kick off a wait log, if there is an opportunity to complete, this function will do it
-    // See the implementation for how this works
-    await routes.checkAndCompleteTransfer(bestRoute, receipt, receiver.signer);
-  } else {
-    console.log('Not initiating transfer (set `imSure` to true to do so)');
   }
-})();

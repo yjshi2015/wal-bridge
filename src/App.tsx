@@ -3,6 +3,8 @@ import { Box, Container, Flex, Heading, Button, Text } from "@radix-ui/themes";
 import { WalletStatus } from "./WalletStatus";
 import { FileUpload } from "./WalrusIndex";
 import { SwapComponent } from './CetusIndex';
+import WormholeConnect from '@wormhole-foundation/wormhole-connect';
+
 
 function App() {
   return (
@@ -43,6 +45,10 @@ function App() {
           <Box>
             <Text size="5" weight="bold" mb="2">wSOL 兑换 SUI</Text>
             <SwapComponent />
+          </Box>
+          <Box>
+            <Text size="5" weight="bold" mb="2">开始跨链</Text>
+            <WormholeConnect />;
           </Box>
         </Container>
       </Container>
